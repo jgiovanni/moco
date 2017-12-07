@@ -1,6 +1,11 @@
-# moco
+# MoCo
 
 > A cooking assistance application that uses speech as the primary form of communication
+
+##Built With
+- VueJS
+- Artyom.js
+- 
 
 ## Build Setup
 

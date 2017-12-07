@@ -26,10 +26,10 @@
 				<v-toolbar-title>MoCo</v-toolbar-title>
 			</v-toolbar>
 			<v-content>
-				<v-layout justify-center align-center>
+				<!--<v-layout justify-center align-center>
 					<v-text-field label="Name" v-model="recText"></v-text-field>
 					<v-btn color="success" large @click="simulateCommand">Send</v-btn>
-				</v-layout>
+				</v-layout>-->
 
 				<router-view/>
 			</v-content>
@@ -43,6 +43,7 @@
 <script>
   /* eslint-disable no-unused-vars */
   import _ from 'underscore'
+  import $ from 'jquery'
   export default {
     name: 'app',
     data: () => ({
@@ -51,7 +52,18 @@
       voice: null,
       isRecording: false,
       recText: 'Moko, Hello',
-      isLoading: false
+      isLoading: false,
+      mocoOptions: {
+        lang: 'en-US',
+        debug: true, // Show what recognizes in the Console
+        continuous: true, // Listen forever
+        soundex: true, // Use the soundex algorithm to increase accuracy
+        listen: true, // Start listening after this
+        speed: 0.9, // Talk a little bit slow
+        mode: 'normal', // This parameter is not required as it will be normal by default
+        // name: 'Moko',
+        obeyKeyword: 'Moko, listen'
+      }
     }),
     methods: {
       toDialogFlow (text) {
@@ -76,7 +88,7 @@
           if (response.data.meals) {
             this.$root.searchResults = response.data.meals
             let count = response.data.meals.length
-            this.speak(`I've found ${count > 1 ? count + ' recipe' : count + 'recipes'}.`)
+            this.speak(`I've found ${count > 1 ? count + ' recipes' : count + 'recipe'}.`)
           } else {
             this.speak(`No recipes were found `)
           }
@@ -88,7 +100,7 @@
           if (response.data.meals) {
             this.$root.searchResults = response.data.meals
             let count = response.data.meals.length
-            this.speak(`I've found ${count > 1 ? count + ' recipe' : count + 'recipes'}.`)
+            this.speak(`I've found ${count > 1 ? count + ' recipes' : count + 'recipe'}.`)
           } else {
             this.speak(`No recipes were found `)
           }
@@ -100,7 +112,7 @@
           if (response.data.meals) {
             this.$root.searchResults = response.data.meals
             let count = response.data.meals.length
-            this.speak(`I've found ${count > 1 ? count + ' recipe' : count + 'recipes'}.`)
+            this.speak(`I've found ${count > 1 ? count + ' recipes' : count + 'recipe'}.`)
           } else {
             this.speak(`No ${category} recipes were found `)
           }
@@ -118,10 +130,10 @@
       loadMoCoCommands () {
         this.$root.MoCo.addCommands([
           {
-            indexes: ['Hello', 'Hi', 'is someone there'],
+            indexes: ['Hello Moco', 'Hi Moco', 'Hey Moco'],
             action: (i) => {
               this.speakRandom([
-                'Good Morning', 'Hello'
+                'Good Morning', 'Hey'
               ])
             }
           },
@@ -161,7 +173,7 @@
             }
           },
           {
-            indexes: ['Stop listening'],
+            indexes: ['Stop listening', 'Moco, stop listening'],
             action: (i) => {
               this.speak('Okay')
               this.$root.MoCo.dontObey()
@@ -171,9 +183,25 @@
           {
             indexes: ['Moco, listen'],
             action: (i) => {
-              this.speakRandom([
-                'Hello', 'Hey, I\'m listening'
-              ])
+              this.speakRandom(['Hello', 'Hey, I\'m listening'])
+            }
+          },
+          {
+            indexes: ['select recipe *', 'select *'],
+            smart: true,
+            action: (i, wildcard) => {
+              switch (i) {
+                case 0:
+                  let num = _.isString(wildcard) && wildcard.length === 3 ? wildcard.substr(0, 2) : wildcard
+                  console.log(num)
+                  this.$router.push(`recipe/${this.$root.searchResults[num].idMeal}`)
+                  break
+                case 1:
+                  let result = _.findWhere(this.$root.searchResults, { strMeal: wildcard })
+                  if (result) this.$router.push(`recipe/${this.$root.searchResults[num].idMeal}`)
+                  else this.speak(`I'm sorry, I can't find ${wildcard}.`)
+                  break
+              }
             }
           }
         ])
@@ -181,23 +209,22 @@
       // mic free testing using text field
       simulateCommand () {
         this.$root.MoCo.simulateInstruction(this.recText)
+      },
+      restartMoco () {
+        // this.$root.MoCo.fatality() // Stop artyom
+        setTimeout(function () {
+          /* this.$root.MoCo.initialize(this.mocoOptions).then(function () {
+            console.log('MoCo listening again')
+          }) */
+        }, 250)
       }
     },
     created () {
       // eslint-disable-next-line no-new
       this.loadMoCoCommands()
-      this.$root.MoCo.initialize({
-        lang: 'en-US',
-        debug: true, // Show what recognizes in the Console
-        continuous: true, // Listen forever
-        soundex: true, // Use the soundex algorithm to increase accuracy
-        listen: true, // Start listening after this
-        speed: 0.9, // Talk a little bit slow
-        mode: 'normal', // This parameter is not required as it will be normal by default
-        // name: 'Moko',
-        obeyKeyword: 'Moko, listen'
-      }).then(() => {
-        console.log('MoCo has been succesfully initialized')
+      this.$root.MoCo.initialize(this.mocoOptions).then(() => {
+        this.$root.MoCo.when('SPEECH_SYNTHESIS_END', () => { this.$root.MoCo.ArtyomWebkitSpeechRecognition.abort() })
+        console.log('MoCo has been successfully initialized')
       }).catch((err) => {
         console.error('MoCo couldn\'t be initialized: ', err)
       })
@@ -205,6 +232,17 @@
 
       this.$root.$on('ASR:set', (string) => {
         this.recText = string
+      })
+
+      this.$root.$on('Background:SET', (url) => {
+        let contentSelector = $('.content')
+        contentSelector.css('background-image', `url("${url}")`)
+        contentSelector.css('background-attachment', `fixed`)
+        contentSelector.css('background-size', `cover`)
+        contentSelector.css('background-position', `center center`)
+      })
+      this.$root.$on('Background:CLEAR', (url) => {
+        $('.content').css('background-image', 'none')
       })
     }
   }
@@ -214,13 +252,13 @@
 	@import "https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Material+Icons";
 
 	#app {
-		font-family: 'Avenir', Helvetica, Arial, sans-serif;
+		/*font-family: 'Avenir', Helvetica, Arial, sans-serif;*/
 		-webkit-font-smoothing: antialiased;
 		-moz-osx-font-smoothing: grayscale;
 		text-align: center;
 		color: #2c3e50;
-		margin-top: 60px;
+		/*margin-top: 60px;*/
 	}
 
-	canvas { display: none !important; }
+	/*canvas { display: none !important; }*/
 </style>
