@@ -19,6 +19,32 @@ Vue.prototype.$http = axios
 
 Vue.use(Vuetify)
 Vue.config.productionTip = false
+Vue.mixin({
+  methods: {
+    loadingState (state = false) {
+      this.$root.isLoading = state
+    },
+    speak (text, callback) {
+      this.$root.MoCo.say(text, callback)
+    },
+    speakRandom (array, callback) {
+      this.$root.MoCo.sayRandom(array, callback)
+    },
+    simulateCommand (text) {
+      this.$root.MoCo.simulateInstruction(text)
+    },
+    formatAmountString (amount) {
+      let amountString = amount
+      if (amountString.includes('pinch')) amountString = 'a ' + amountString
+      if (amountString.includes('handful')) amountString = 'a ' + amountString + ' of'
+      if (amountString.includes('tblsp')) amountString = amountString.replace('tblsp', 'tbsp')
+      return amountString
+    },
+    capitalizeString (string) {
+      return string.charAt(0).toUpperCase() + string.slice(1)
+    }
+  }
+})
 
 /* eslint-disable no-new */
 new Vue({
@@ -32,7 +58,8 @@ new Vue({
     AppID: 'd81f4e74',
     searchResults: [],
     selectedRecipe: null,
-    MoCo: MyMoCo
+    MoCo: MyMoCo,
+    isLoading: false,
   }),
   methods: {
     textRequest (text) {

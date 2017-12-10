@@ -3,9 +3,9 @@
 > A cooking assistance application that uses speech as the primary form of communication
 
 ##Built With
-- VueJS
-- Artyom.js
-- 
+- <a href="https://vuejs.org/">VueJS</a>
+- <a href="https://docs.ourcodeworld.com/projects/artyom-js">ArtyomJs</a>
+- <a href="http://www.themealdb.com">TheMealDB + API</a>
 
 ## Build Setup
 

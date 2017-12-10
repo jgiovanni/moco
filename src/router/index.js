@@ -6,14 +6,19 @@ import Recipe from '@/components/recipe'
 Vue.use(Router)
 
 export default new Router({
+  mode: 'history',
   routes: [
     {
-      path: '/',
+      path: '*',
+      redirect: '/recipes/all'
+    },
+    {
+      path: '/recipes/all',
       name: 'Recipes',
       component: HelloWorld
     },
     {
-      path: '/recipe/:id',
+      path: '/recipes/:id(\\d+)',
       name: 'Recipe',
       component: Recipe
     }
